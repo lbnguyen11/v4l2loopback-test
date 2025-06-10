@@ -3191,6 +3191,8 @@ static void free_devices(void)
 
 static int __init v4l2loopback_init_module(void)
 {
+	printk(KERN_INFO
+			"v4l2-loopback init() lgb1hc lbn11 testing v4l2\n");
 	const u32 min_width = V4L2LOOPBACK_SIZE_MIN_WIDTH;
 	const u32 min_height = V4L2LOOPBACK_SIZE_MIN_HEIGHT;
 	int err;
