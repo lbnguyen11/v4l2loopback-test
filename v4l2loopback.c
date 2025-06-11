@@ -2831,6 +2831,12 @@ static int v4l2_loopback_add(struct v4l2_loopback_config *conf, int *ret_nr)
 	vdev_priv->device_nr = nr;
 	init_vdev(dev->vdev, nr);
 	dev->vdev->v4l2_dev = &dev->v4l2_dev;
+	dev->vdev->dev_debug =  V4L2_DEV_DEBUG_IOCTL |
+							V4L2_DEV_DEBUG_IOCTL_ARG |
+							V4L2_DEV_DEBUG_FOP |
+							V4L2_DEV_DEBUG_STREAMING |
+							V4L2_DEV_DEBUG_POLL |
+							V4L2_DEV_DEBUG_CTRL;
 
 	/* initialise v4l2-loopback specific parameters */
 	MARK();
