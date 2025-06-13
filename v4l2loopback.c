@@ -165,6 +165,11 @@ typedef unsigned __poll_t;
 #endif
 
 /* module parameters */
+#define V4L2LOOPBACK_DEFAULT_ALLOWED_GID UINT_MAX
+static uint allowed_gid = V4L2LOOPBACK_DEFAULT_ALLOWED_GID;  // default: no restriction
+module_param(allowed_gid, uint, S_IRUGO | S_IWUSR);
+MODULE_PARM_DESC(allowed_gid, "only allow access to this GID");
+
 static int debug = 0;
 module_param(debug, int, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "debugging level (higher values == more verbose)");
@@ -2315,6 +2320,25 @@ static unsigned int v4l2_loopback_poll(struct file *file,
  * writers are limited by means of setting writer field */
 static int v4l2_loopback_open(struct file *file)
 {
+	kgid_t allowed_kgid = make_kgid(&init_user_ns, allowed_gid);
+	const struct cred *cred = current_cred(); // get current task's subjective credentials
+	bool allowed = (allowed_gid == V4L2LOOPBACK_DEFAULT_ALLOWED_GID); // default: no restriction if not specify param allowed_gid 
+
+	// Iterate over supplementary group list
+	for (int i = 0; i < cred->group_info->ngroups; ++i) {
+		kgid_t gid = cred->group_info->gid[i];
+		if (gid_eq(gid, allowed_kgid)) { // allow if any gid of current task matches allowed_gid
+			allowed = true;
+			break;
+		}
+	}
+
+	if (!allowed) {
+		dprintk("open(): Access denied for UID %u not in allowed GID %u\n",
+			__kuid_val(cred->uid), __kgid_val(allowed_kgid));
+		return -EACCES;
+	}
+
 	struct v4l2_loopback_device *dev;
 	struct v4l2_loopback_opener *opener;
 
